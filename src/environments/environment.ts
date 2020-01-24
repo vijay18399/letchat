@@ -1,10 +1,10 @@
 // This file can be replaced during build by using the `fileReplacements` array.
 // `ng build --prod` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
-
+import * as process from 'process';
 export const environment = {
   production: false,
-  apiUrl: process.env.API
+   apiUrl: 'https://letchats-server.herokuapp.com/api'   || process.env.API,
  // apiUrl: 'https://holidaygift.herokuapp.com'
 };
 
