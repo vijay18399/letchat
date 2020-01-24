@@ -1,0 +1,30 @@
+<ion-header>
+  <ion-toolbar color="tertiary">
+    <ion-avatar slot="start">
+      <img height="10px" src="https://image.flaticon.com/icons/svg/684/684907.svg">
+    </ion-avatar>
+    <ion-title>Let Chat</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="signOut()">
+        <ion-icon slot="icon-only" name="log-out"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="loadUsers($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+  <ion-list>
+    <ion-item *ngFor="let user of users"  routerLink="/chat/{{ user.username }}" >
+      <ion-avatar slot="start">
+        <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=0D8ABC&color=fff">
+      </ion-avatar>
+      <ion-label class="ion-text-wrap">
+        {{ user.username }} 
+        <p>{{ user.email }}</p>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+</ion-content>

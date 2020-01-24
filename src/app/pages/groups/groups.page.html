@@ -1,0 +1,33 @@
+<ion-header>
+  <ion-toolbar color="tertiary">
+    <ion-avatar slot="start">
+      <img height="10px" src="https://image.flaticon.com/icons/svg/684/684907.svg">
+    </ion-avatar>
+    <ion-title>Let Chat</ion-title>
+   
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-fab  vertical="top" horizontal="end" slot="fixed" edge>
+    <ion-fab-button  routerLink="/gcreator" color="primary" >
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+  <ion-refresher slot="fixed" (ionRefresh)="loadGroups($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+  <ion-list>
+    <ion-item *ngFor="let group of groups" routerLink="/gchat/{{ group.groupid }}" >
+      <ion-avatar slot="start">
+        <img src="https://ui-avatars.com/api/?name={{ group.groupid }}&background=0D8ABC&color=fff">
+      </ion-avatar>
+      <ion-label>
+        <h2>{{ group.groupid }}</h2>
+        <p>{{ group.owner }}</p>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+  
+</ion-content>
+

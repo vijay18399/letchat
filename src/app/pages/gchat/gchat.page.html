@@ -1,0 +1,53 @@
+<ion-header>
+  <ion-toolbar color="tertiary">
+    <ion-buttons slot="start" collapse="true">
+      <ion-button (click)="goback()" >
+        <ion-icon slot="icon-only" name="arrow-back"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-avatar slot="start">
+      <img height="10px" src="https://ui-avatars.com/api/?name={{ data.groupid  }}&background=0D8ABC&color=fff">
+    </ion-avatar>
+    <ion-title>{{ data.groupid }}</ion-title>
+
+  </ion-toolbar>
+</ion-header>
+<ion-content>
+
+ 
+  <ion-grid>
+    <ion-row *ngFor="let message of messages">
+ 
+      <ion-col size="9" *ngIf="message.from !== data.from" class="{{ getSentiment(message.score) }} message ">
+        <span>{{ message.message }}</span><img *ngIf="isspam(message.spamcheck)"  height='30px' src="https://image.flaticon.com/icons/svg/564/564619.svg" >
+        <img *ngIf="isbirthday(message.message)"  height='30px' src="https://image.flaticon.com/icons/svg/2451/2451787.svg" > 
+        <img *ngIf="iscongratulation(message.message)"  height='30px' src="https://image.flaticon.com/icons/png/512/1629/1629891.png" > 
+        <div class="time" text-right><br>{{ message.createdAt | date:'short' }}</div>
+      </ion-col>
+ 
+      <ion-col offset="3" size="9" *ngIf="message.from === data.from" class="message my-message">
+        <span>{{ message.message }}</span>
+        <div class="time" text-right><br>{{ message.createdAt | date:'short' }}</div>
+      </ion-col>
+ 
+    </ion-row>
+  </ion-grid>
+ 
+</ion-content>
+ 
+<ion-footer>
+  <ion-toolbar color="light">
+    <ion-row align-items-center>
+      <ion-col size="10">
+        <ion-textarea auto-grow class="message-input" rows="1" [(ngModel)]="data.message"></ion-textarea>
+      </ion-col>
+      <ion-col size="2">
+        <ion-button expand="block" fill="clear" color="primary" [disabled]="data.message === ''" class="msg-btn"
+          (click)="sendMessage()">
+          <ion-icon name="ios-send" slot="icon-only"></ion-icon>
+        </ion-button>
+      </ion-col>
+    </ion-row>
+  </ion-toolbar>
+</ion-footer>
+

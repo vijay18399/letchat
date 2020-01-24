@@ -1,0 +1,47 @@
+ion-content{
+  --background: url(https://media.florim.com/media/sto/imgs/coll/prod/color/00A1835_panzoom@2x.jpg) 0 0/100% 100% no-repeat;
+}
+  .message {
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 4px;
+      white-space: pre-wrap;
+    }
+     
+    .my-message {
+      background: #fff;
+      color: black;
+    }
+  
+     
+    .time {
+      color: #0a0a0a;
+      float: right;
+      font-size: small;
+    }
+     
+    .message-input {
+      margin-top: 0px;
+      border: 1px solid var(--ion-color-medium);
+      border-radius: 10px;
+      background: #fff;
+    }
+     
+    .msg-btn {
+      --padding-start: 0.5em;
+      --padding-end: 0.5em;
+    }
+    .danger {
+      background-color: #FFAC7F;
+      color: black;
+    }
+    
+    .success {
+      background-color: #DCF8C6;
+      color: black;
+    }
+    
+    .default {
+      background-color:#99DBF4;
+      color: black;
+    }

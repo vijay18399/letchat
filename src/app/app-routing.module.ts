@@ -1,9 +1,31 @@
 import { NgModule } from '@angular/core';
 import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
+import { AuthGuard } from './guards/auth.guard';
+import { AutoLoginGuard } from './guards/auto-login.guard';
 
 const routes: Routes = [
-  { path: '', redirectTo: 'home', pathMatch: 'full' },
-  { path: 'home', loadChildren: () => import('./home/home.module').then( m => m.HomePageModule)},
+  {
+    path: '',
+    loadChildren: () =>
+      import('./pages/login/login.module').then(m => m.LoginPageModule),
+      canActivate: [AutoLoginGuard]
+  },
+  {
+    path: 'register',
+    loadChildren: () =>
+      import('./pages/register/register.module').then(m => m.RegisterPageModule),
+      canActivate: [AutoLoginGuard]
+  },
+  {
+    path: 'app',
+    loadChildren: () =>
+      import('./pages/tabs/tabs.module').then(m => m.TabsPageModule),
+    canActivate: [AuthGuard]
+  },
+  { path: 'groups', loadChildren: './pages/groups/groups.module#GroupsPageModule' },
+  { path: 'chat/:id', loadChildren: './pages/chat/chat.module#ChatPageModule' },
+  { path: 'gchat/:gid', loadChildren: './pages/gchat/gchat.module#GchatPageModule' },
+  { path: 'gcreator', loadChildren: './pages/gcreator/gcreator.module#GcreatorPageModule' },
 ];
 
 @NgModule({
