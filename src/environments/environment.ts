@@ -5,6 +5,7 @@ import * as process from 'process';
 export const environment = {
   production: false,
    apiUrl: 'https://letchats-server.herokuapp.com/api'   || process.env.API,
+   apiUrl2: 'https://letchats-services.herokuapp.com/api'   || process.env.API2,
  // apiUrl: 'https://holidaygift.herokuapp.com'
 };
 

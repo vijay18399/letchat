@@ -21,7 +21,6 @@ export class AuthGuard implements CanActivate{
             message: 'You are not allowed to access that page.',
             buttons: ['OK']
           }).then(alert => alert.present());
- 
           this.router.navigateByUrl('/');
           return false;
         } else {

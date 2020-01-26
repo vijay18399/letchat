@@ -133,7 +133,21 @@ export class ApiService {
       take(1)
     );
   }
-
+  Detecturls(data) {
+    return this.http.post(`${environment.apiUrl2}/url`, data).pipe(
+      take(1)
+    );
+  }
+  Translate(data) {
+    return this.http.post(`${environment.apiUrl2}/translate`, data).pipe(
+      take(1)
+    );
+  }
+  DetectLang(data) {
+    return this.http.post(`${environment.apiUrl2}/detect`, data).pipe(
+      take(1)
+    );
+  }
   logout() {
     this.storage.remove(TOKEN_KEY).then(() => {
       this.router.navigateByUrl('/');
