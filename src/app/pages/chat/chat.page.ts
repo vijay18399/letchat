@@ -1,19 +1,29 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService, User } from '../../services/api.service';
-import { AlertController, LoadingController } from '@ionic/angular';
+import { AlertController, LoadingController, Platform } from '@ionic/angular';
 import { tap, finalize } from 'rxjs/operators';
 import { Socket } from 'ngx-socket-io';
 import { ToastController } from '@ionic/angular';
 import { IonContent } from '@ionic/angular';
 import { TextToSpeech } from '@ionic-native/text-to-speech/ngx';
 import { ActionSheetController } from '@ionic/angular';
+import { File, FileEntry } from '@ionic-native/File/ngx';
+import { HttpClient } from '@angular/common/http';
+import { WebView } from '@ionic-native/ionic-webview/ngx';
+import { FilePath } from '@ionic-native/file-path/ngx';
+import { ChangeDetectorRef } from '@angular/core';
+import { Camera, CameraOptions, PictureSourceType } from '@ionic-native/Camera/ngx';
+import { Storage } from '@ionic/storage';
+const STORAGE_KEY = 'my_images';
+
 @Component({
   selector: 'app-chat',
   templateUrl: './chat.page.html',
   styleUrls: ['./chat.page.scss'],
 })
 export class ChatPage implements OnInit {
+  images = [];
   isactive = false;
   data = {
     to: '',
@@ -25,10 +35,15 @@ export class ChatPage implements OnInit {
   @ViewChild(IonContent, { read: IonContent, static: false }) myContent: IonContent;
   messages = null;
   constructor(private activatedRoute: ActivatedRoute, private api: ApiService,
-    private loadingCtrl: LoadingController, private socket: Socket,
+    private loadingCtrl: LoadingController,
+    private socket: Socket,
     private toastCtrl: ToastController, private router: Router,
     private tts: TextToSpeech, public actionSheetController: ActionSheetController,
-    private alertCtrl: AlertController
+    private alertCtrl: AlertController,
+    private camera: Camera, private file: File,
+    private webview: WebView, private storage: Storage,
+    private plt: Platform, private ref: ChangeDetectorRef, private filePath: FilePath
+
   ) { }
 
 
@@ -42,18 +57,18 @@ export class ChatPage implements OnInit {
     this.socket.fromEvent('new_user').subscribe(data => {
       const x = this.api.getUserToken()['username'];
       if (x !== data['username']) {
-        this.showToast('new User joined' + data['username']);
+        this.presentToast('new User joined' + data['username']);
       }
 
     });
     this.socket.fromEvent('message_in_group').subscribe(data => {
-      this.showToast(data['from'] + "@" + data['groupid'] + ":" + data['message']);
+      this.presentToast(data['from'] + "@" + data['groupid'] + ":" + data['message']);
     });
 
     this.socket.fromEvent('logined').subscribe(data => {
       const x = this.api.getUserToken()['username'];
       if (x !== data['username']) {
-        this.showToast(data['username'] + ' is online now');
+        this.presentToast(data['username'] + ' is online now');
       }
     });
   }
@@ -83,7 +98,7 @@ export class ChatPage implements OnInit {
     if ((data.to === this.data.to && data.from === this.data.from) || (data.to === this.data.from && data.from === this.data.to)) {
       this.messages.push(data);
     } else if (data.to === this.data.from && data.from !== this.data.to) {
-      this.showToast('you got a messsage from ' + data.from);
+      this.presentToast('you got a messsage from ' + data.from);
     }
   }
   loadMessage(message) {
@@ -103,7 +118,7 @@ export class ChatPage implements OnInit {
     this.socket.emit('send-message', this.data);
     this.data.message = '';
   }
-  async showToast(msg) {
+  async presentToast(msg) {
     let toast = await this.toastCtrl.create({
       message: msg,
       position: 'top',
@@ -293,6 +308,181 @@ export class ChatPage implements OnInit {
   open(url){
     window.open(url, '_system');
   }
+//here
+loadStoredImages() {
+  this.storage.get(STORAGE_KEY).then(images => {
+    if (images) {
+      let arr = JSON.parse(images);
+      this.images = [];
+      for (let img of arr) {
+        let filePath = this.file.dataDirectory + img;
+        let resPath = this.pathForImage(filePath);
+        this.images.push({ name: img, path: resPath, filePath: filePath });
+      }
+    }
+  });
+}
 
+pathForImage(img) {
+  if (img === null) {
+    return '';
+  } else {
+    let converted = this.webview.convertFileSrc(img);
+    return converted;
+  }
+}
+uploadcamera(){
+  this.takePicture(this.camera.PictureSourceType.CAMERA);
+}
+uploadimage(){
+  this.takePicture(this.camera.PictureSourceType.PHOTOLIBRARY);
+}
+uploaddocument(){
+  alert('hi');
+}
+takePicture(sourceType: PictureSourceType) {
+  var options: CameraOptions = {
+      quality: 100,
+      sourceType: sourceType,
+      saveToPhotoAlbum: false,
+      correctOrientation: true
+  };
+
+  this.camera.getPicture(options).then(imagePath => {
+      if (this.plt.is('android') && sourceType === this.camera.PictureSourceType.PHOTOLIBRARY) {
+          this.filePath.resolveNativePath(imagePath)
+              .then(filePath => {
+                  let correctPath = filePath.substr(0, filePath.lastIndexOf('/') + 1);
+                  let currentName = imagePath.substring(imagePath.lastIndexOf('/') + 1, imagePath.lastIndexOf('?'));
+                  this.copyFileToLocalDir(correctPath, currentName, this.createFileName());
+              });
+      } else {
+          var currentName = imagePath.substr(imagePath.lastIndexOf('/') + 1);
+          var correctPath = imagePath.substr(0, imagePath.lastIndexOf('/') + 1);
+          this.copyFileToLocalDir(correctPath, currentName, this.createFileName());
+      }
+  });
+
+}
+
+createFileName() {
+  var d = new Date(),
+      n = d.getTime(),
+      newFileName = n + ".jpg";
+  return newFileName;
+}
+
+copyFileToLocalDir(namePath, currentName, newFileName) {
+  this.file.copyFile(namePath, currentName, this.file.dataDirectory, newFileName).then(success => {
+      this.updateStoredImages(newFileName);
+  }, error => {
+      this.presentToast('Error while storing file.');
+  });
+}
+
+updateStoredImages(name) {
+  this.storage.get(STORAGE_KEY).then(images => {
+      let arr = JSON.parse(images);
+      if (!arr) {
+          let newImages = [name];
+          this.storage.set(STORAGE_KEY, JSON.stringify(newImages));
+      } else {
+          arr.push(name);
+          this.storage.set(STORAGE_KEY, JSON.stringify(arr));
+      }
+
+      let filePath = this.file.dataDirectory + name;
+      let resPath = this.pathForImage(filePath);
+
+      let newEntry = {
+          name: name,
+          path: resPath,
+          filePath: filePath
+      };
+
+      this.images = [newEntry, ...this.images];
+      this.ref.detectChanges(); // trigger change detection cycle
+  });
+}
+deleteImage(imgEntry, position) {
+  this.images.splice(position, 1);
+
+  this.storage.get(STORAGE_KEY).then(images => {
+      let arr = JSON.parse(images);
+      let filtered = arr.filter(name => name != imgEntry.name);
+      this.storage.set(STORAGE_KEY, JSON.stringify(filtered));
+
+      var correctPath = imgEntry.filePath.substr(0, imgEntry.filePath.lastIndexOf('/') + 1);
+
+      this.file.removeFile(correctPath, imgEntry.name).then(res => {
+          this.presentToast('File removed.');
+      });
+  });
+}
+startUpload(imgEntry) {
+  this.file.resolveLocalFilesystemUrl(imgEntry.filePath)
+      .then(entry => {
+          ( < FileEntry > entry).file(file => this.readFile(file))
+      })
+      .catch(err => {
+          this.presentToast('Error while reading file.');
+      });
+}
+
+readFile(file: any) {
+  const reader = new FileReader();
+  reader.onload = () => {
+      const formData = new FormData();
+      const imgBlob = new Blob([reader.result], {
+          type: file.type
+      });
+      formData.append('file', imgBlob, file.name);
+      this.uploadImageData(formData);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async uploadImageData(formData: FormData) {
+ 
+    const loading = await this.loadingCtrl.create();
+    loading.present();
+
+    this.api.Upload(formData).pipe(
+      finalize(() => loading.dismiss())
+    )
+      .subscribe(async res => {
+        console.log(res);
+        if (!res['success']) {
+          const alert = await this.alertCtrl.create({
+            header: res['message'] ,
+            message: res['msg'],
+            buttons: ['OK']
+          });
+          await alert.present();
+        }
+        else {
+         var  payload = {
+            to : this.data.to,
+            from : this.data.from,
+            isfile : true,
+            ext: res['ext'],
+            file: res['file'],
+            original: res['original'],
+            message : '  '
+          }
+          this.socket.emit('send-message', payload);
+          this.images.length = 0;
+          this.images=[];
+          const alert = await this.alertCtrl.create({
+            header:   res['ext']+"  "+ res['message'] +"  "+ res['file']+"  "+res['original'],
+            message: res['message'],
+            buttons: ['OK']
+          });
+          await alert.present();
+         
+        }
+     
+      });
+}
 
 }

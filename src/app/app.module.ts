@@ -11,8 +11,12 @@ import { AppRoutingModule } from './app-routing.module';
 import {IonicGestureConfig} from './gestures/ionic-gesture-config';
 import { IonicStorageModule, Storage } from '@ionic/storage';
 import { HttpClientModule } from '@angular/common/http';
-
+import { Camera } from '@ionic-native/Camera/ngx';
+import { File } from '@ionic-native/File/ngx';
+import { WebView } from '@ionic-native/ionic-webview/ngx';
+import { FilePath } from '@ionic-native/file-path/ngx';
 import { SocketIoModule, SocketIoConfig } from 'ngx-socket-io';
+
 const config: SocketIoConfig = { url:   process.env.SOCKET ||
    'https://letchats-socket.herokuapp.com'  , options: {} };
 // https://letchats-socket.herokuapp.com
@@ -34,8 +38,8 @@ export function jwtOptionsFactory(storage) {
   entryComponents: [],
   imports: [BrowserModule, IonicModule.forRoot(), AppRoutingModule,
     IonicStorageModule.forRoot(),
-    HttpClientModule,
     SocketIoModule.forRoot(config),
+    HttpClientModule,
     JwtModule.forRoot({
       jwtOptionsProvider: {
         provide: JWT_OPTIONS,
@@ -48,6 +52,10 @@ export function jwtOptionsFactory(storage) {
     StatusBar,
     SplashScreen,
     TextToSpeech,
+    Camera,
+    File,
+    WebView,
+    FilePath,
     {
       provide: HAMMER_GESTURE_CONFIG,
       useClass: IonicGestureConfig

@@ -148,6 +148,11 @@ export class ApiService {
       take(1)
     );
   }
+  Upload(data) {
+    return this.http.post(`${environment.apiUrl3}/upload`, data).pipe(
+      take(1)
+    );
+  }
   logout() {
     this.storage.remove(TOKEN_KEY).then(() => {
       this.router.navigateByUrl('/');
