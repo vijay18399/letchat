@@ -27,8 +27,11 @@
       <ion-fab-button  (click)="uploadimage()" color="light">
         <ion-icon name="image"></ion-icon>
       </ion-fab-button>
-      <ion-fab-button (click)="uploaddocument()" color="light">
-        <ion-icon name="document"></ion-icon>
+      <ion-fab-button (click)="recordAudio()" color="light">
+        <ion-icon name="microphone"></ion-icon>
+      </ion-fab-button>
+      <ion-fab-button (click)="recordVideo()" color="light">
+        <ion-icon name="videocam"></ion-icon>
       </ion-fab-button>
     </ion-fab-list>
 
@@ -36,7 +39,10 @@
   <ion-grid  >
     <ion-row *ngFor="let message of messages">
       <ion-col size="9" (press)="presentActionSheet(message)"   *ngIf="message.to === data.from" class="{{ getSentiment(message.score) }} message ">
-        <img *ngIf="message.isfile"  height='230px' src="https://letchat-upload.herokuapp.com/{{message.file}}" > 
+        <video *ngIf="message.isfile && message.ext=='mp4'"  width="320" height="240" controls>
+          <source src="https://letchat-upload.herokuapp.com/{{message.file}}" type="video/mp4">
+            </video>
+        <img *ngIf="message.isfile && message.ext=='jpeg'"  height='230px' src="https://letchat-upload.herokuapp.com/{{message.file}}" > 
         <span>{{ message.message }}</span><img *ngIf="isspam(message.spamcheck)"  height='30px' src="https://image.flaticon.com/icons/svg/564/564619.svg" >
         <img *ngIf="isbirthday(message.message)"  height='30px' src="https://image.flaticon.com/icons/svg/2451/2451787.svg" > 
         <img *ngIf="iscongratulation(message.message)"  height='130px' src="https://image.flaticon.com/icons/png/512/1629/1629891.png" > 
@@ -46,19 +52,47 @@
       </ion-col>
  
       <ion-col offset="3" size="9" *ngIf="message.to !== data.from" class="message my-message">
-        <img *ngIf="message.isfile"  height='230px' src="https://letchat-upload.herokuapp.com/{{message.file}}" > 
+        <video *ngIf="message.isfile && message.ext=='mp4'"  width="320" height="240" controls>
+          <source src="https://letchat-upload.herokuapp.com/{{message.file}}" type="video/mp4">
+            </video>
+      
+        <img *ngIf="message.isfile && message.ext=='jpeg'"  height='230px' src="https://letchat-upload.herokuapp.com/{{message.file}}" > 
         <span>{{ message.message }} </span>
         <div class="time" text-right><br>{{ message.createdAt | date:'short' }}</div>
       </ion-col>
     </ion-row>
     <ion-list  >
       <ion-item *ngFor="let img of images; index as pos" text-wrap>
-          <img   height='230px' [src]="img.path" > 
-        <ion-label>
-          {{ img.name }}
-        </ion-label>
-        <ion-button expand="block"  (click)="startUpload(img)" ><ion-icon slot="icon-only" name="cloud-upload"></ion-icon>Send</ion-button>
+        <img   height='230px' width="340px" [src]="img.path" > 
+        <ion-item-divider></ion-item-divider>
+        <ion-button slot="start"  (click)="startUpload(img)" ><ion-icon slot="icon-only" name="cloud-upload"></ion-icon>Send</ion-button>
+        <ion-button  slot="end" (click)="deleteImage(img, pos)"><ion-icon slot="icon-only" name="trash"></ion-icon>cancel</ion-button>
       </ion-item>
+    </ion-list>
+    <ion-list>
+      <ion-item-sliding *ngFor="let f of files">
+        <ion-item (click)="openFile(f)">
+          <ion-icon name="videocam" slot="start" *ngIf="f.name.endsWith('MOV') || f.name.endsWith('mp4')"></ion-icon>
+          <ion-icon name="mic" slot="start" *ngIf="f.name.endsWith('wav') || f.name.endsWith('mp3')"></ion-icon>
+   
+          <ion-label class="ion-text-wrap">
+            {{ f.name }}
+            <p>{{ f.fullPath }}</p>
+          </ion-label>
+        </ion-item>
+   
+        <ion-item-options side="start">
+          <ion-item-option (click)="deleteFile(f)" color="danger">
+            <ion-icon name="trash" slot="icon-only"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+        <ion-item-options side="end">
+          <ion-item-option (click)="uploadFile(f)" color="primary">
+            <ion-icon name="cloud-upload" slot="icon-only"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+   
+      </ion-item-sliding>
     </ion-list>
   </ion-grid>
  

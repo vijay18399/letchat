@@ -24,7 +24,9 @@ import { TOKEN_KEY } from './services/api.service';
 import { JwtModule, JWT_OPTIONS } from '@auth0/angular-jwt';
 import { ServiceWorkerModule } from '@angular/service-worker';
 import { environment } from '../environments/environment';
-
+import { MediaCapture } from '@ionic-native/media-capture/ngx';
+import { Media } from '@ionic-native/media/ngx';
+import { StreamingMedia } from '@ionic-native/streaming-media/ngx';
 export function jwtOptionsFactory(storage) {
   return {
     tokenGetter: () => {
@@ -56,6 +58,9 @@ export function jwtOptionsFactory(storage) {
     File,
     WebView,
     FilePath,
+    MediaCapture,
+    Media,
+    StreamingMedia,
     {
       provide: HAMMER_GESTURE_CONFIG,
       useClass: IonicGestureConfig

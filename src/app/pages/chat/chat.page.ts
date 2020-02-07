@@ -14,9 +14,18 @@ import { WebView } from '@ionic-native/ionic-webview/ngx';
 import { FilePath } from '@ionic-native/file-path/ngx';
 import { ChangeDetectorRef } from '@angular/core';
 import { Camera, CameraOptions, PictureSourceType } from '@ionic-native/Camera/ngx';
+import { VideoPlayer } from '@ionic-native/video-player/ngx';
+
+import {
+  MediaCapture,
+  MediaFile,
+  CaptureError
+} from '@ionic-native/media-capture/ngx';
+import { Media, MediaObject } from '@ionic-native/media/ngx';
+import { StreamingMedia } from '@ionic-native/streaming-media/ngx';
 import { Storage } from '@ionic/storage';
 const STORAGE_KEY = 'my_images';
-
+const MEDIA_FOLDER_NAME = 'my_media';
 @Component({
   selector: 'app-chat',
   templateUrl: './chat.page.html',
@@ -24,6 +33,7 @@ const STORAGE_KEY = 'my_images';
 })
 export class ChatPage implements OnInit {
   images = [];
+  files = [];
   isactive = false;
   data = {
     to: '',
@@ -42,12 +52,41 @@ export class ChatPage implements OnInit {
     private alertCtrl: AlertController,
     private camera: Camera, private file: File,
     private webview: WebView, private storage: Storage,
-    private plt: Platform, private ref: ChangeDetectorRef, private filePath: FilePath
+    private plt: Platform, private ref: ChangeDetectorRef, private filePath: FilePath,
+    private media: Media,
+    private streamingMedia: StreamingMedia,
+    private mediaCapture: MediaCapture
 
   ) { }
 
 
   ngOnInit() {
+   // Enable
+ // (<any>window).plugins.preventscreenshot.enable((a) => this.successCallback(a), (b) => this.errorCallback(b));
+ 
+// Disable
+  
+ 
+
+
+    ///////////////////////////////////////////
+    this.plt.ready().then(() => {
+
+      let path = this.file.dataDirectory;
+      this.file.checkDir(path, MEDIA_FOLDER_NAME).then(
+        () => {
+       this.loadFiles();
+        },
+        err => {
+          this.file.createDir(path, MEDIA_FOLDER_NAME, false);
+        }
+      );
+      
+    });
+
+
+
+    //////////////////////////////////////////////////
     this.ScrollToBottom(100);
     this.loadUsers();
     this.socket.fromEvent('message').subscribe(data => {
@@ -72,6 +111,21 @@ export class ChatPage implements OnInit {
       }
     });
   }
+
+//////////////////////////////////////////////////////////////////////////////
+loadFiles() {
+  this.file.listDir(this.file.dataDirectory, MEDIA_FOLDER_NAME).then(
+    res => {
+      this.files = res;
+    },
+    err => console.log('error loading files: ', err)
+  );
+}
+
+////////////////////////////////////////////////////////////////////////
+
+
+
   isTyping() {
     this.socket.emit('typing', this.data);
   }
@@ -296,9 +350,9 @@ export class ChatPage implements OnInit {
     }
   }
   ionViewWillEnter(){
-    console.log('enetering'+ this.isactive);
+    console.log('enetering' + this.isactive);
     this.isactive = true;
-    console.log(this.isactive); 
+    console.log(this.isactive);
   }
   ionViewWillLeave(){
     console.log('leaving'+this.isactive);
@@ -485,4 +539,135 @@ async uploadImageData(formData: FormData) {
       });
 }
 
+///////////////////////////////////////////////////////////////////////
+
+copyFileToLocalDir2(fullPath) {
+  let myPath = fullPath;
+  // Make sure we copy from the right location
+  if (fullPath.indexOf('file://') < 0) {
+    myPath = 'file://' + fullPath;
+  }
+
+  const ext = myPath.split('.').pop();
+  const d = Date.now();
+  const newName = `${d}.${ext}`;
+
+  const name = myPath.substr(myPath.lastIndexOf('/') + 1);
+  const copyFrom = myPath.substr(0, myPath.lastIndexOf('/') + 1);
+  const copyTo = this.file.dataDirectory + MEDIA_FOLDER_NAME;
+
+  this.file.copyFile(copyFrom, name, copyTo, newName).then(
+    success => {
+      this.loadFiles();
+    },
+    error => {
+      console.log('error: ', error);
+    }
+  );
+}
+
+recordAudio() {
+  this.mediaCapture.captureAudio().then(
+    (data: MediaFile[]) => {
+      if (data.length > 0) {
+        this.copyFileToLocalDir2(data[0].fullPath);
+      }
+    },
+    (err: CaptureError) => console.error(err)
+  );
+}
+
+recordVideo() {
+  this.mediaCapture.captureVideo().then(
+    (data: MediaFile[]) => {
+      if (data.length > 0) {
+        this.copyFileToLocalDir2(data[0].fullPath);
+      }
+    },
+    (err: CaptureError) => console.error(err)
+  );
+}
+deleteFile(f: FileEntry) {
+  const path = f.nativeURL.substr(0, f.nativeURL.lastIndexOf('/') + 1);
+  this.file.removeFile(path, f.name).then(() => {
+    this.loadFiles();
+  }, err => console.log('error remove: ', err));
+}
+openFile(f: FileEntry) {
+  if (f.name.indexOf('.wav') > -1  || f.name.indexOf('.mp3') > -1 ) {
+    // We need to remove file:/// from the path for the audio plugin to work
+    const path =  f.nativeURL.replace(/^file:\/\//, '');
+    const audioFile: MediaObject = this.media.create(path);
+    audioFile.play();
+  } else if (f.name.indexOf('.MOV') > -1 || f.name.indexOf('.mp4') > -1) {
+    // E.g: Use the Streaming Media plugin to play a video
+    this.streamingMedia.playVideo(f.nativeURL);
+  } else if (f.name.indexOf('.jpg') > -1) {
+   //
+   console.log("error");
+  }
+}
+
+
+async uploadFile(f: FileEntry) {
+  const path = f.nativeURL.substr(0, f.nativeURL.lastIndexOf('/') + 1);
+  const type = this.getMimeType(f.name.split('.').pop());
+  const buffer = await this.file.readAsArrayBuffer(path, f.name);
+  const fileBlob = new Blob([buffer], type);
+  const formData = new FormData();
+  formData.append('file', fileBlob, f.name);
+  this.deleteFile(f);
+  this.uploadVideoData(formData);
+}
+
+getMimeType(fileExt) {
+  if (fileExt == 'wav') return { type: 'audio/wav' };
+  else if (fileExt == 'jpg') return { type: 'image/jpg' };
+  else if (fileExt == 'mp4') return { type: 'video/mp4' };
+  else if (fileExt == 'MOV') return { type: 'video/quicktime' };
+}
+
+
+async uploadVideoData(formData: FormData) {
+  const loading = await this.loadingCtrl.create();
+  loading.present();
+
+  this.api.Upload(formData).pipe(
+    finalize(() => loading.dismiss())
+  )
+    .subscribe(async res => {
+      console.log(res);
+      if (!res['success']) {
+        const alert = await this.alertCtrl.create({
+          header: res['message'] ,
+          message: res['msg'],
+          buttons: ['OK']
+        });
+        await alert.present();
+      }
+      else {
+       var  payload = {
+          to : this.data.to,
+          from : this.data.from,
+          isfile : true,
+          ext: res['ext'],
+          file: res['file'],
+          original: res['original'],
+          message : '  '
+        }
+        this.socket.emit('send-message', payload);
+        const alert = await this.alertCtrl.create({
+          header:   res['ext']+"  "+ res['message'] +"  "+ res['file']+"  "+res['original'],
+          message: res['message'],
+          buttons: ['OK']
+        });
+        await alert.present();
+       
+      }
+   
+    });
+}
+
+
+//////////////////////////////////////////////////////////
 }
